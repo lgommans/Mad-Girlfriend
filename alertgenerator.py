@@ -27,8 +27,9 @@ class Alerter:
         self.fields = Alerter.fields[:] # make a copy of the list
 
     def writeHeader(self, extravalues):
-        for row in extravalues:
-            self.fields.append([row[0], row[1]])
+        if extravalues != None:
+            for row in extravalues:
+                self.fields.append([row[0], row[1]])
 
         fields = ''
         types = ''
@@ -77,8 +78,9 @@ class Alerter:
         values['dport'] = packet.dport
         values['prio'] = level
 
-        for row in extravalues:
-            values[row[0]] = row[2]
+        if extravalues != None:
+            for row in extravalues:
+                values[row[0]] = row[2]
 
         values = self.setValues(values)
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from packetparser import Packet
 import time
 
 class Alert:
@@ -7,10 +8,12 @@ class Alert:
     HIGH = 'High'
     MODERATE = 'Moderate'
     LOW = 'Low'
+    INFO = 'Info'
+    DEBUG = 'Debug'
 
 class Alerter:
     # name:type
-    fields = [[ 'ts', 'time']
+    _fields = [[ 'ts', 'time']
         , [ 'uid', 'string' ]
         , [ 'saddr', 'addr' ]
         , [ 'sport', 'port' ]
@@ -22,18 +25,19 @@ class Alerter:
     # filename is without .log!
     def __init__(self, filename):
         self.filename = filename
-        self.logfile = open(filename + ".log", 'w')
         self.wroteHeader = False
-        self.fields = Alerter.fields[:] # make a copy of the list
+        self.state = {}
+        self._fields = Alerter._fields[:] # make a copy of the list
+        self.logfile = open(filename + ".log", 'w')
 
-    def writeHeader(self, extravalues):
+    def _writeHeader(self, extravalues):
         if extravalues != None:
             for row in extravalues:
-                self.fields.append([row[0], row[1]])
+                self._fields.append([row[0], row[1]])
 
         fields = ''
         types = ''
-        for field in self.fields:
+        for field in self._fields:
             fields += ' ' + field[0]
             types += ' ' + field[1]
 
@@ -49,8 +53,8 @@ class Alerter:
         self.logfile.write(header)
         self.wroteHeader = True
 
-    def setValues(self, kv):
-        row = self.fields[:] # make a copy of the list
+    def _setValues(self, kv):
+        row = self._fields[:] # make a copy of the list
         for key in kv:
             i = 0
             index = -1
@@ -65,10 +69,17 @@ class Alerter:
                 row[i][1] = kv[key]
         return row
 
-    def log(self, level, packet, extravalues = None):
-        if not self.wroteHeader:
-            self.writeHeader(extravalues)
+    def log(self, level, packet = None, extravalues = None):
+        # A packet may not be given (e.g. for canary events, where the actual packet is irrelevant)
+        if packet == None:
+            # In that case, forge a packet so we have a uid
+            packet = Packet('')
 
+        if extravalues != None:
+            if not self.wroteHeader:
+                self._writeHeader(extravalues)
+
+        # Set default values for the log line
         values = {}
         values['ts'] = time.time()
         values['uid'] = packet.uid
@@ -78,22 +89,29 @@ class Alerter:
         values['dport'] = packet.dport
         values['prio'] = level
 
+        # Do we have extra values? Set the values
         if extravalues != None:
             for row in extravalues:
                 values[row[0]] = row[2]
 
-        values = self.setValues(values)
+        values = self._setValues(values)
 
+        # Build the line we'll write to the logfile
         logline = ''
         for col in values:
             logline += str(col[1]) + "\x09"
 
         self.logfile.write(logline + '\n')
-        self.logfile.flush() # Bad practice, flushing on all (well, most) writes, but it does need to get to logstash in realtime. Perhaps build a time-based caching mechanism to cache briefly?
+        # It's bad practice to flushing on all (well, most) writes, but it does need to get to
+        # logstash in realtime. Perhaps build a time-based caching mechanism to cache briefly?
+        self.logfile.flush()
 
-        packet.dump()
+        # Info- (e.g. canary) and debug-level events are not dumped
+        if level != Alert.INFO and level != Alert.DEBUG:
+            packet.dump()
 
     def close(self):
+        # Close the log file gracefully
         if self.wroteHeader:
             self.logfile.write('#close ' + time.strftime('%Y-%m-%d-%H-%M-%S') + '\n')
             self.logfile.close()

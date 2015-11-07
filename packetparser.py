@@ -16,7 +16,7 @@ class Packet:
         self.dport = '-'
         self.ipversion = '-'
         self.type = 'unknown'
-        self.subtype = 'ethernet'
+        self.subtype = 'unknown'
 
         while True:
             uid = base64.b64encode(os.urandom(9))
@@ -24,9 +24,12 @@ class Packet:
                 break
         self.uid = uid
 
-        # In case we have no data, data is set to rawPacket
+        # In case the protocol is unknown, data is set to rawPacket
         self.rawPacket = rawPacket
         self.data = rawPacket
+
+        if len(rawPacket) < Packet.eth_length:
+            return
 
         eth_header = rawPacket[:Packet.eth_length]
         eth = unpack('!6s6sH' , eth_header)
@@ -121,9 +124,9 @@ class Packet:
                 self.type = 'unknown'
                 self.subtype = 'ip'
         else:
-            # Non-IP packet
+            # All we know is that it's probably ethernet
             self.type = 'unknown'
-            self.subtype = 'unknown'
+            self.subtype = 'probably-ethernet'
 
     def _eth_addr(self, a):
       return "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (ord(a[0]) , ord(a[1]) , ord(a[2]), ord(a[3]), ord(a[4]) , ord(a[5]))

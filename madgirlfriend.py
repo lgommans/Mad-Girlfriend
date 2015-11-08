@@ -4,7 +4,7 @@ from rules import Checkers
 from alertgenerator import Alerter
 from packetparser import Packet
 
-import signal, sys, os, socket, traceback
+import signal, sys, os, socket, traceback, exceptions
 
 checkers = []
 for methodName in Checkers.__dict__:
@@ -29,13 +29,18 @@ try:
             try:
                 checker(Packet(data), alerter)
             except:
-                sys.stderr.write("Error in checker {}: {}: {}\n{}".format(checkerName, \
-                    sys.exc_info()[0], sys.exc_info()[1], traceback.print_tb(sys.exc_info()[2])))
+                if sys.exc_info()[0] is exceptions.KeyboardInterrupt:
+                    raise
+                else:
+                    sys.stderr.write("Error in checker {}: {}: {}\n{}".format(checkerName, \
+                        sys.exc_info()[0], sys.exc_info()[1], traceback.print_tb(sys.exc_info()[2])))
 
         packetsHandled += 1
 
 except KeyboardInterrupt:
     print("Received SIGINT")
-    for checker, alerter in checkers:
+    for checker, alerter, checkerName in checkers:
+        print("Closing " + checkerName + ".log")
         alerter.close()
+    print("Done! Have a nice day :)")
 

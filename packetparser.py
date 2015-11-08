@@ -8,6 +8,16 @@ from struct import *
 class Packet:
     eth_length = 14
 
+    def uid(self):
+        if self._uidset == False:
+            while True:
+                uid = base64.b64encode(os.urandom(9))
+                if '/' not in uid and '+' not in uid:
+                    break
+            self._uid = uid
+            self._uidset = True
+        return self._uid
+
     def __init__(self, rawPacket):
         # Set some defaults so it doesn't break when we ask something without checking stuff first...
         self.saddr = '-'
@@ -17,12 +27,7 @@ class Packet:
         self.ipversion = '-'
         self.type = 'unknown'
         self.subtype = 'unknown'
-
-        while True:
-            uid = base64.b64encode(os.urandom(9))
-            if '/' not in uid and '+' not in uid:
-                break
-        self.uid = uid
+        self._uidset = False
 
         # In case the protocol is unknown, data is set to rawPacket
         self.rawPacket = rawPacket
@@ -137,8 +142,8 @@ class Packet:
         if not os.path.isdir(folder):
             os.makedirs(folder)
 
-        if not os.path.isfile(folder + '/' + self.uid):
-            f = open(folder + '/' + self.uid, 'w')
+        if not os.path.isfile(folder + '/' + self.uid()):
+            f = open(folder + '/' + self.uid(), 'w')
             f.write(self.rawPacket)
             f.close()
 

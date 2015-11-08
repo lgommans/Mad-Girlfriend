@@ -82,7 +82,7 @@ class Alerter:
         # Set default values for the log line
         values = {}
         values['ts'] = time.time()
-        values['uid'] = packet.uid
+        values['uid'] = packet.uid()
         values['saddr'] = packet.saddr
         values['sport'] = packet.sport
         values['daddr'] = packet.daddr

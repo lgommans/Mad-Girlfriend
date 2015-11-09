@@ -64,7 +64,7 @@ class Alerter:
                     break
                 i += 1
             if index == -1:
-                row.apppend([key, kv[key]])
+                row.append([key, kv[key]])
             else:
                 row[i][1] = kv[key]
         return row

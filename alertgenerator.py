@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from packetparser import Packet
+from decimal import Decimal
 import time
 
 class Alert:
@@ -22,13 +23,12 @@ class Alerter:
         , [ 'prio', 'enum' ]
     ]
 
-    # filename is without .log!
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, name):
+        self.name = name
         self.wroteHeader = False
         self.state = {}
         self._fields = Alerter._fields[:] # make a copy of the list
-        self.logfile = open(filename + ".log", 'w')
+        self.logfile = open(name + ".log", 'w')
 
     def _writeHeader(self, extravalues):
         if extravalues != None:
@@ -45,10 +45,10 @@ class Alerter:
             + '#set_separator ,\n'
             + '#empty_field (empty)\n'
             + '#unset_field -\n'
-            + '#path ' + self.filename + '\n'
+            + '#path ' + self.name + '\n'
             + '#open ' + time.strftime('%Y-%m-%d-%H-%M-%S') + '\n'
             + '#fields' + fields + '\n'
-            + '#types' + types + '\n'][0]
+            + '#types' + types + '\n'][0] # This array construction is so I can do a multi-line string
 
         self.logfile.write(header)
         self.wroteHeader = True
@@ -81,7 +81,7 @@ class Alerter:
 
         # Set default values for the log line
         values = {}
-        values['ts'] = time.time()
+        values['ts'] = str(Decimal(packet.creationTime))[:17]
         values['uid'] = packet.uid()
         values['saddr'] = packet.saddr
         values['sport'] = packet.sport
@@ -98,8 +98,10 @@ class Alerter:
 
         # Build the line we'll write to the logfile
         logline = ''
+        tab = ''
         for col in values:
-            logline += str(col[1]) + "\x09"
+            logline += tab + str(col[1])
+            tab = "\x09"
 
         self.logfile.write(logline + '\n')
         # It's bad practice to flushing on all (well, most) writes, but it does need to get to

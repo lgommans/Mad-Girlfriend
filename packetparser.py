@@ -19,6 +19,9 @@ class Packet:
         return self._uid
 
     def __init__(self, rawPacket):
+        # To be sure it's the right time, let this be the first thing we do
+        self.creationTime = time.time()
+
         # Set some defaults so it doesn't break when we ask something without checking stuff first...
         self.saddr = '-'
         self.daddr = '-'

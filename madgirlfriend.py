@@ -18,20 +18,27 @@ def getMemoryUsage():
     return totalUsableMemory
 
 def canary(packet, alerter):
+    global lastPacketsHandled, lastBytesHandled
     # The canary chirps its status every now and then
     nowandthen = 15 # seconds
 
     if 'lastalert' not in alerter.state:
         alerter.state['lastalert'] = 0
 
-    if time.time() - alerter.state['lastalert'] > nowandthen:
+    elapsedSinceLastCanary = time.time() - alerter.state['lastalert']
+    if elapsedSinceLastCanary > nowandthen:
         alerter.state['lastalert'] = time.time()
-        ph = ['packetsHandled', 'count', packetsHandled]
-        bh = ['bytesHandled', 'count', bytesHandled]
+        ph = ['packetsHandled', 'count', lastPacketsHandled / elapsedSinceLastCanary]
+        tph = ['totalPacketsHandled', 'count', packetsHandled]
+        bh = ['bytesHandled', 'count', lastBytesHandled / elapsedSinceLastCanary]
+        tbh = ['totalBytesHandled', 'count', bytesHandled]
         memusage = ['memusage', 'count', getMemoryUsage()]
         loadavg = ['loadavg', 'count', os.getloadavg()[0]]
-        extravalues = [ph, bh, memusage, loadavg]
+        extravalues = [tph, tbh, memusage, loadavg, ph, bh]
         alerter.log(Alert.INFO, None, extravalues)
+
+        lastPacketsHandled = 0 # since last canary
+        lastBytesHandled = 0 # since last canary
 
 # The rules array contains all rules we apply to each packet.
 # The canary function, defined above, is always present.
@@ -56,6 +63,8 @@ print("Mad Girlfriend initialized.")
 
 packetsHandled = 0
 bytesHandled = 0
+lastPacketsHandled = 0 # since last canary
+lastBytesHandled = 0 # since last canary
 try:
     while True:
         data = s.recvfrom(65565)[0]
@@ -71,6 +80,8 @@ try:
                         sys.exc_info()[0], sys.exc_info()[1], traceback.print_tb(sys.exc_info()[2])))
 
         packetsHandled += 1
+        lastPacketsHandled += 1
+        lastBytesHandled += len(data)
         bytesHandled += len(data)
 
 except KeyboardInterrupt:

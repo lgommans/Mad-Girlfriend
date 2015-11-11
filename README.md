@@ -1,6 +1,6 @@
 # Mad Girlfriend
 
-An IDS with its rules written in Python.
+An IDS where you can write your rules in Python.
 
 ## Usage
 
@@ -10,13 +10,17 @@ An IDS with its rules written in Python.
 
 3. Run `/path/to/madgirlfriend.py` in that directory.
 
-4. ???
+Done! You are now running an IDS.
 
-5. Log files and packet dumps for the rules you have configured! You get a free canary event that logs uptime and system information :)
+## Design
+
+The design goal of this project was to write an alternative to Snort, Suricata and Bro that is easy to configure and quick to setup. It is highly configurable and every aspect of the engine can be changed as it's quite easy to understand.
+
+Of course an IDS needs to be resilient against exceptional conditions - that's what it's made to detect - and I believe we've achieved this due to extensive exception handling. If something goes wrong in a rule, which happens regularly when you're testing things out so I've seen it plenty of times, the engine will catch it and continue with the other rules as if nothing happened. The error will be printed to `stderr` together with a complete stack trace for easy debugging.
 
 ## Writing rules
 
-Tired of Snort's complicated rules? Or even Bro with a custom scripting format?! These rules are plain Python.
+Don't like Snort's complicated rules? Or Bro with its custom scripting language?! These rules are simple Python.
 
 Add a function in `rules.py` that accepts the arguments `packet` and `alerter`.
 The `alerter` has two functions:
@@ -31,7 +35,7 @@ If you want additional data (not just timestamp, source and destination), define
     extravalues = [['temperature', 'count', 44], ['name', 'type', value], ...]
     alerter.log(priority, packet, extravalues)
 
-The `packet` argument that your function gets, contains with the following fields:
+The `packet` argument that your function accepts, contains the following fields:
 
 - `packet.type` = "icmp", "tcp", "udp" OR "unknown"
 - `packet.subtype` = "ip" OR "unknown"

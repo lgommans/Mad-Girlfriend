@@ -59,8 +59,8 @@ for methodName in Rules.__dict__:
 
 try:
     s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-except socket.error, msg:
-    print('Error creating socket. Error Code: ' + str(msg[0]) + ', message: ' + msg[1])
+except:
+    print('Error creating socket.')
     sys.exit(1)
 
 print("Mad Girlfriend initialized.")

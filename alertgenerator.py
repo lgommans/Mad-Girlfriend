@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# This file is part of the Mad Girlfriend software
+# COPYRIGHT 2015 Raoul Houkes & Luc Gommans
+# All rights reserved.
+
 from packetparser import Packet
 from decimal import Decimal
 import time
@@ -14,7 +18,7 @@ class Alert:
 
 class Alerter:
     # name:type
-    _fields = [[ 'ts', 'time']
+    _defaultFields = [[ 'ts', 'time']
         , [ 'uid', 'string' ]
         , [ 'saddr', 'addr' ]
         , [ 'sport', 'port' ]
@@ -25,10 +29,9 @@ class Alerter:
 
     def __init__(self, name):
         self.name = name
-        self.wroteHeader = False
+        self._wroteHeader = False
         self.state = {}
-        self._fields = Alerter._fields[:] # make a copy of the list
-        self.logfile = open(name + ".log", 'w')
+        self._fields = Alerter._defaultFields[:] # make a copy of the list
 
     def _writeHeader(self, extravalues):
         if extravalues != None:
@@ -41,7 +44,7 @@ class Alerter:
             fields += ' ' + field[0]
             types += ' ' + field[1]
 
-        header = ['#separator \x09\n'
+        header = ['#separator \\x09\n'
             + '#set_separator ,\n'
             + '#empty_field (empty)\n'
             + '#unset_field -\n'
@@ -50,24 +53,28 @@ class Alerter:
             + '#fields' + fields + '\n'
             + '#types' + types + '\n'][0] # This array construction is so I can do a multi-line string
 
-        self.logfile.write(header)
-        self.wroteHeader = True
+        self._logfile = open(self.name + ".log", 'w')
+        self._logfile.write(header)
+        self._wroteHeader = True
 
+    # Turn the {key: value, ...} dictionary into a [[key, value], [...]] list, preserving order of the original, and updating the values.
     def _setValues(self, kv):
-        row = self._fields[:] # make a copy of the list
+        existingFields = self._fields[:] # make a copy of the list (original order)
         for key in kv:
-            i = 0
-            index = -1
-            for field in row:
+            value = kv[key]
+            index = 0
+            found = False
+            for field in existingFields:
                 if field[0] == key:
-                    index = i
+                    found = True
                     break
-                i += 1
-            if index == -1:
-                row.append([key, kv[key]])
+                index += 1
+            if index == -1: # Key not found in original list
+                # Does this mean the extravalues list is variable?!
+                existingFields.append([key, value])
             else:
-                row[i][1] = kv[key]
-        return row
+                existingFields[index][1] = value
+        return existingFields
 
     def log(self, level, packet = None, extravalues = None):
         # A packet may not be given (e.g. for canary events, where the actual packet is irrelevant)
@@ -75,9 +82,8 @@ class Alerter:
             # In that case, forge a packet so we have a uid
             packet = Packet('')
 
-        if extravalues != None:
-            if not self.wroteHeader:
-                self._writeHeader(extravalues)
+        if not self._wroteHeader:
+            self._writeHeader(extravalues)
 
         # Set default values for the log line
         values = {}
@@ -103,10 +109,10 @@ class Alerter:
             logline += tab + str(col[1])
             tab = "\x09"
 
-        self.logfile.write(logline + '\n')
+        self._logfile.write(logline + '\n')
         # It's bad practice to flushing on all (well, most) writes, but it does need to get to
         # logstash in realtime. Perhaps build a time-based caching mechanism to cache briefly?
-        self.logfile.flush()
+        self._logfile.flush()
 
         # Info- (e.g. canary) and debug-level events are not dumped
         if level != Alert.INFO and level != Alert.DEBUG:
@@ -115,6 +121,6 @@ class Alerter:
     def close(self):
         # Close the log file gracefully
         if self.wroteHeader:
-            self.logfile.write('#close ' + time.strftime('%Y-%m-%d-%H-%M-%S') + '\n')
-            self.logfile.close()
+            self._logfile.write('#close ' + time.strftime('%Y-%m-%d-%H-%M-%S') + '\n')
+            self._logfile.close()
 

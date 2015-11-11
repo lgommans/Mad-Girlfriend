@@ -120,7 +120,7 @@ class Alerter:
 
     def close(self):
         # Close the log file gracefully
-        if self.wroteHeader:
+        if self._wroteHeader:
             self._logfile.write('#close ' + time.strftime('%Y-%m-%d-%H-%M-%S') + '\n')
             self._logfile.close()
 

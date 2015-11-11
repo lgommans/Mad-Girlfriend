@@ -51,7 +51,7 @@ for methodName in Rules.__dict__:
     if methodName[0] != '_':
         if methodName == 'canary':
             print("Error: you cannot have a rule named 'canary'. This is a reserved name.")
-            sys.exit(4)
+            sys.exit(2)
         rules.append((Rules.__dict__[methodName], Alerter(methodName)))
     else:
         if methodName not in ['__module__', '__doc__']:
@@ -94,4 +94,7 @@ except KeyboardInterrupt:
         print("Closing " + alerter.name + ".log")
         alerter.close()
     print("Done! Have a nice day :)")
+    sys.exit(0)
+
+sys.exit(3)
 

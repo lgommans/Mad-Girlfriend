@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# This file is part of the Mad Girlfriend software
+# COPYRIGHT 2015 Raoul Houkes & Luc Gommans
+# All rights reserved.
+
 from alertgenerator import Alert
 
 import re

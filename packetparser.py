@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-# Credits: Silver Moon (m00n.silv3r@gmail.com) for the packet parser
+# This file is part of the Mad Girlfriend software
+# COPYRIGHT 2015 Raoul Houkes & Luc Gommans
+# All rights reserved.
+
+# Credits: Silver Moon (m00n.silv3r@gmail.com) for parsing the Ethernet, IP, TCP, UDP and ICMP packet headers.
 
 import socket, sys, os, base64, time
 from struct import *

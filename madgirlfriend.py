@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# This file is part of the Mad Girlfriend software
+# COPYRIGHT 2015 Raoul Houkes & Luc Gommans
+# All rights reserved.
+
 from rules import Rules
 from alertgenerator import Alert, Alerter
 from packetparser import Packet
